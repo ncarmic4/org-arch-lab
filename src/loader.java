@@ -4,8 +4,18 @@ import java.util.Scanner;
 
 public class loader
 {
+
+    public static void main(String[] args){
+        load();
+        mmu mmu = new mmu();
+        for(int i = 0; i < mmu.ram.length; i++){
+            System.out.println(mmu.ram[i]);
+        }
+    }
+
     public static void load()
     {
+        mmu mmu = new mmu();
         try
         {
             File f = new File("src/instructions.txt");

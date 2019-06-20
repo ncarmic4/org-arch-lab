@@ -1,13 +1,13 @@
 public class mmu
 {
-    private static String[] ram = new String[100];
+    public String[] ram = new String[100];
 
-    public static String load(int address)
+    public String load(int address)
     {
         return ram[address].substring(0, 8);
     }
 
-    public static void store(int address, String data)
+    public void store(int address, String data)
     {
         ram[address] = data;
     }
