@@ -30,18 +30,20 @@ public class cpu
     private mmu mmu = new mmu();
     private Registers[] reg = new Registers[16];
 
+    private int pc;
+
     public static void main(String[] args) {
+
         // Declare a new cpu
         cpu cpu = new cpu();
 
+        for(int i = 0; i < cpu.reg.length; i++){
+            cpu.reg[i] = new Registers();
+        }
+
         // Loads instructions into the mmu ram array
         loader.load(cpu.mmu);
-
-        // Fetch the hex instruction from the mmu
-        String hex = cpu.fetch(0);
-
-        // Decode the hex instruction, sets the properties (reg1, reg2, address, etc.)
-        cpu.decode(hex);
+        cpu.execute();
     }
 
     private String fetch(int index) {
@@ -51,9 +53,14 @@ public class cpu
     private void decode(String hex) {
         // Adds leading zeros if binary string is less than 32 chars long
         binary = new BigInteger(hex, 16).toString(2);
-        while (binary.length() > 32) {
+        while (binary.length() < 32) {
             binary = "0" + binary;
         }
+
+        // Chars 3-8 specify opcode, we convert it to decimal and use it to index opcodeArray
+        String opcodeBinary = binary.substring(2, 8);
+        int opcodeIndex = Integer.parseInt(opcodeBinary, 2);
+        opcode = opcodeArray[opcodeIndex];
 
         // First two chars of binary string specifies instruction format
         String instructionFormat = binary.substring(0, 2);
@@ -74,11 +81,6 @@ public class cpu
                 inputOutput();
             }
         }
-
-        // Chars 3-8 specify opcode, we convert it to decimal and use it to index opcodeArray
-        String opcodeBinary = binary.substring(2, 8);
-        int opcodeIndex = Integer.parseInt(opcodeBinary, 2);
-        opcode = opcodeArray[opcodeIndex];
     }
 
     private void execute(String binary) {
@@ -131,27 +133,39 @@ public class cpu
         evaluate();
     }
 
-    private void evaluate() {
+    private void execute(){
+        String hex = fetch(pc);
+        pc++;
+        decode(hex);
+        System.out.println(opcode + "\n" + hex + "\n" + binary + "\npc: " + pc);
+        System.out.println("-------------------");
+        execute();
+    }
 
+    private int hexToDecimal(String hex){
+        return Integer.parseInt(hex, 16);
+    }
+
+    private void evaluate() {
         switch (opcode) {
             case "RD": {
-                reg[reg1Index].data = reg[addressIndex].data;
+                reg[reg1Index].data = reg[reg2Index].data;
             }
 
             case "WR": {
-                reg[addressIndex].data = reg[reg1Index].data;
+                mmu.ram[addressIndex] = String.valueOf(reg[reg1Index].data);
             }
 
             case "ST": {
                 if (reg2Index == 0) {
-                    reg[addressIndex].data = reg[reg1Index].data;
+                    reg[reg1Index].data = addressIndex;
                 } else {
-                    reg[reg2Index].data = reg[reg1Index].data;
+                    reg[reg1Index].data = hexToDecimal(mmu.ram[reg[reg2Index].data]);
                 }
             }
 
             case "LW": {
-                reg[reg1Index].data = reg[addressIndex].data;
+                reg[reg1Index].data = addressIndex;
             }
 
             case "MOV": {
@@ -170,8 +184,12 @@ public class cpu
                 reg[reg3Index].data = reg[reg1Index].data * reg[reg2Index].data;
             }
 
-            case "DIV": {
-                reg[reg3Index].data = reg[reg1Index].data / reg[reg2Index].data;
+            case "DIV":
+            {
+                if (reg[reg2Index].data != 0)
+                {
+                    reg[reg3Index].data = reg[reg1Index].data / reg[reg2Index].data;
+                }
             }
 
             case "AND": {
@@ -181,7 +199,101 @@ public class cpu
                     reg[reg3Index].data = 0;
                 }
             }
-        }
 
+            case "OR": {
+                if (reg[reg1Index].data == 1 || reg[reg2Index].data == 1){
+                    reg[reg3Index].data = 1;
+                } else {
+                    reg[reg3Index].data = 0;
+                }
+            }
+
+            case "MOVI": {
+                reg[reg2Index].data = addressIndex;
+            }
+
+            case "ADDI": {
+                reg[reg2Index].data = reg[reg2Index].data + addressIndex;
+            }
+
+            case "MULI": {
+                reg[reg2Index].data = reg[reg2Index].data * addressIndex;
+            }
+
+            case "DIVI": {
+                if(addressIndex != 0){
+                    reg[reg2Index].data = reg[reg2Index].data / addressIndex;
+                }
+            }
+
+            case "LDI": {
+                //come back to this
+                reg[reg2Index].data = addressIndex;
+            }
+
+            case "SLT": {
+                if(reg[reg1Index].data < reg[reg2Index].data){
+                    reg[reg3Index].data = 1;
+                } else {
+                    reg[reg3Index].data = 0;
+                }
+            }
+
+            case "SLTI": {
+                if(reg[reg1Index].data < addressIndex){
+                    reg[reg2Index].data = 1;
+                } else {
+                    reg[reg2Index].data = 0;
+                }
+            }
+
+            case "HLT": {
+                return;
+            }
+
+            case "NOP": {
+                pc++;
+            }
+
+            case "JMP": {
+                pc = addressIndex;
+            }
+
+            case "BEQ": {
+                if(reg[reg1Index].data == reg[reg2Index].data){
+                    pc = addressIndex;
+                }
+            }
+
+            case "BNE": {
+                if(reg[reg1Index].data != reg[reg2Index].data){
+                    pc = addressIndex;
+                }
+            }
+
+            case "BEZ": {
+                if(reg[reg2Index].data == 0){
+                    pc = addressIndex;
+                }
+            }
+
+            case "BNZ": {
+                if(reg[reg1Index].data != 0){
+                    pc = addressIndex;
+                }
+            }
+
+            case "BGZ": {
+                if(reg[reg1Index].data > 0){
+                    pc = addressIndex;
+                }
+            }
+
+            case "BLZ": {
+                if(reg[reg1Index].data < 0){
+                    pc = addressIndex;
+                }
+            }
+        }
     }
 }
