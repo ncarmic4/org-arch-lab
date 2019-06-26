@@ -4,7 +4,6 @@ import java.util.Scanner;
 
 public class loader
 {
-
     public static void main(String[] args) {
         mmu mmu = new mmu();
         load(mmu);
