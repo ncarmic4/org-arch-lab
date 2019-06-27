@@ -91,7 +91,7 @@ public class cpu {
         pc++;
         decode(hex);
 
-        // Debugging statements
+        // Debugging statements, the third register listed is not always used
         System.out.println(opcode + " | pc: " + pc + "\n" + hex + "  |  " + binary);
         System.out.println("AddressIndex: " + addressIndex + " | REG " + reg1Index + ": " + reg[reg1Index].data
                 + " | REG " + reg2Index + ": " + reg[reg2Index].data
@@ -103,7 +103,6 @@ public class cpu {
             execute();
         } else {
             // Final Output
-            System.out.println("||||||||||||||||||||||||||||||||||");
             System.out.println(mmu.ram[43] + " | " + toDecimal(mmu.ram[43], 16));
         }
     }
